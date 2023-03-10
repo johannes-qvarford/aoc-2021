@@ -35,50 +35,55 @@ const Parser = struct {
     }
 };
 
-const Window = struct {
-    items: [3]u32,
-    count: u2,
-
-    const Self = @This();
-    const Error = error {
-        Empty
-    };
-
-    fn empty() Window {
-        return Window {
-            .items = [_]u32{0} ** 3,
-            .count = 0
-        };
-    }
-
-    fn push_back(self: *Self, item: u32) void {
-        if (self.count < 3) {
-            self.items[self.count] = item;
-            self.count += 1;
-            return;
-        }
-
-        self.items[0] = self.items[1];
-        self.items[1] = self.items[2];
-        self.items[2] = item;
-    }
-
-    fn sum(self: Self) Error!u32 {
-        if (self.count < 3) {
-            return Error.Empty;
-        }
-        var item_sum: u32 = 0;
-        for (0..3) |i| {
-            item_sum += self.items[i];
-        }
-        return item_sum;
-    }
+const WindowError = error {
+    Empty
 };
+
+fn Window(comptime T: type, comptime size: comptime_int) type {
+    return struct {
+        items: [size]T,
+        count: std.math.IntFittingRange(0, size),
+
+        const Self = @This();
+
+        fn empty() Self {
+            return Self {
+                .items = [_]u32{undefined} ** size,
+                .count = 0
+            };
+        }
+
+        fn push_back(self: *Self, item: T) void {
+            if (self.count < size) {
+                self.items[self.count] = item;
+                self.count += 1;
+                return;
+            }
+
+            inline for (0..size-1) |i| {
+                self.items[i] = self.items[i+1];
+            }
+
+            self.items[size-1] = item;
+        }
+
+        fn sum(self: Self) WindowError!u32 {
+            if (self.count < size) {
+                return WindowError.Empty;
+            }
+            var item_sum: u32 = 0;
+            inline for (0..size) |i| {
+                item_sum += self.items[i];
+            }
+            return item_sum;
+        }
+    };
+}
 
 pub fn run(parser: *Parser) !u32 {
     var previous_sum: u32 = std.math.maxInt(u32);
     var increments: u32 = 0;
-    var window = Window.empty();
+    var window = Window(u32, 3).empty();
     loop: while (true) {
         const n = parser.parseUnsigned(u32) catch |e| {
             switch (e) {
@@ -89,8 +94,7 @@ pub fn run(parser: *Parser) !u32 {
         window.push_back(n);
         const sum = window.sum() catch |e| {
             switch (e) {
-                Window.Error.Empty => continue :loop,
-                else => return e,
+                WindowError.Empty => continue :loop
             }
         };
 
