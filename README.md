@@ -1,3 +1,7 @@
-# Introduction
+# Advent of Code 2021
 
-Advent of Code 2021 in Zig.
+Prerequisites:
+* zig
+
+Run all tests with
+> zig build test
