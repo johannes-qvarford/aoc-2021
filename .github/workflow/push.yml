@@ -1,0 +1,17 @@
+on: [push]
+
+name: CI
+
+jobs:
+  test:
+    name: aoc-2021
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Toolchain
+        uses: goto-bus-stop/setup-zig@v2
+        with:
+          version: 0.11.0-dev.1914+14590e956
+      - name: Test
+        run: zig build test
