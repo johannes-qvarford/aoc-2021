@@ -9,7 +9,7 @@ pub fn build(b: *std.Build) void {
 
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
-    const test_step = b.step("test", "Run library tests");
+    const all_tests_step = b.step("test", "Run library tests");
 
     var iterable: std.fs.IterableDir = std.fs.cwd().openIterableDir(".", std.fs.Dir.OpenDirOptions { .access_sub_paths = true, .no_follow = true }) catch unreachable;
     defer iterable.close();
@@ -25,13 +25,21 @@ pub fn build(b: *std.Build) void {
             file_name.appendSlice(present_entry.name) catch unreachable;
             file_name.appendSlice("/src/main.zig"[0..]) catch unreachable;
 
-            const main_tests = b.addTest(.{
+            const dir_tests = b.addTest(.{
                 .root_source_file = .{ .path = file_name.allocatedSlice()[0..file_name.items.len] },
                 .target = target,
                 .optimize = optimize,
             });
 
-            test_step.dependOn(&main_tests.step);
+            var command = std.ArrayListAligned(u8, @alignOf(u8)).init(arena.allocator());
+            defer command.deinit();
+            command.appendSlice("test_") catch unreachable;
+            command.appendSlice(present_entry.name[0..]) catch unreachable;
+
+            const task_tests_step = b.step(command.items, "Run library tests");
+
+            all_tests_step.dependOn(&dir_tests.step);
+            task_tests_step.dependOn(&dir_tests.step);
         }
     }
 }
