@@ -12,10 +12,10 @@ const Parser = struct {
         if (self.buffer.len == 0) return error.EndOfFile;
 
         var n: T = 0;
-        while(self.buffer.len > 0) : (self.buffer = self.buffer[1..]) {
+        while (self.buffer.len > 0) : (self.buffer = self.buffer[1..]) {
             const c = self.buffer[0];
             const digit = try switch (c) {
-                '0' ... '9' => c - '0',
+                '0'...'9' => c - '0',
                 '\n' => {
                     self.buffer = self.buffer[1..];
                     return n;
@@ -23,7 +23,7 @@ const Parser = struct {
                 else => blk: {
                     std.debug.print("Invalid character {c}", .{c});
                     break :blk error.InvalidCharacter;
-                }
+                },
             };
             const n2 = @mulWithOverflow(n, 10);
             if (n2[1] != 0) return error.NumberOverflow;
@@ -35,9 +35,7 @@ const Parser = struct {
     }
 };
 
-const WindowError = error {
-    Empty
-};
+const WindowError = error{Empty};
 
 fn Window(comptime T: type, comptime size: comptime_int) type {
     return struct {
@@ -47,10 +45,7 @@ fn Window(comptime T: type, comptime size: comptime_int) type {
         const Self = @This();
 
         fn empty() Self {
-            return Self {
-                .items = [_]u32{undefined} ** size,
-                .count = 0
-            };
+            return Self{ .items = [_]u32{undefined} ** size, .count = 0 };
         }
 
         fn push_back(self: *Self, item: T) void {
@@ -60,11 +55,11 @@ fn Window(comptime T: type, comptime size: comptime_int) type {
                 return;
             }
 
-            inline for (0..size-1) |i| {
-                self.items[i] = self.items[i+1];
+            inline for (0..size - 1) |i| {
+                self.items[i] = self.items[i + 1];
             }
 
-            self.items[size-1] = item;
+            self.items[size - 1] = item;
         }
 
         fn sum(self: Self) WindowError!u32 {
@@ -88,13 +83,13 @@ pub fn run(parser: *Parser) !u32 {
         const n = parser.parseUnsigned(u32) catch |e| {
             switch (e) {
                 error.EndOfFile => break,
-                else => return e
+                else => return e,
             }
         };
         window.push_back(n);
         const sum = window.sum() catch |e| {
             switch (e) {
-                WindowError.Empty => continue :loop
+                WindowError.Empty => continue :loop,
             }
         };
 
@@ -110,7 +105,7 @@ pub fn main() !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
     const buffer = try std.io.getStdIn().readToEndAllocOptions(arena.allocator(), 1_000_000, null, @alignOf(u8), 0);
-    var parser = Parser { .buffer = buffer };
+    var parser = Parser{ .buffer = buffer };
 
     const increments = try run(&parser);
 
@@ -119,13 +114,13 @@ pub fn main() !void {
 }
 
 test "example" {
-    var parser = Parser { .buffer = example };
+    var parser = Parser{ .buffer = example };
     const actual: u32 = try run(&parser);
     try std.testing.expect(actual == 5);
 }
 
 test "input" {
-    var parser = Parser { .buffer = input };
+    var parser = Parser{ .buffer = input };
     const actual: u32 = try run(&parser);
     try std.testing.expect(actual == 1618);
 }

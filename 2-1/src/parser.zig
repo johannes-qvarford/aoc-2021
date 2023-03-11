@@ -11,15 +11,15 @@ pub const Parser = struct {
 
         var hasReadAtLeastOneByte = false;
         var n: T = 0;
-        while(self.buffer.len > 0) : (self.buffer = self.buffer[1..]) {
+        while (self.buffer.len > 0) : (self.buffer = self.buffer[1..]) {
             const c = self.buffer[0];
             const digit = try switch (c) {
-                '0' ... '9' => c - '0',
+                '0'...'9' => c - '0',
                 else => blk: {
                     if (hasReadAtLeastOneByte) return n;
                     std.debug.print("Invalid character {c}", .{c});
                     break :blk error.InvalidCharacter;
-                }
+                },
             };
             hasReadAtLeastOneByte = true;
             const n2 = @mulWithOverflow(n, 10);
@@ -77,7 +77,7 @@ pub const Parser = struct {
 
 test "can parse valid enum" {
     const E = enum { north, east, south, west };
-    var p = Parser { .buffer = "souththing" };
+    var p = Parser{ .buffer = "souththing" };
     const e = try p.parseEnum(E);
     try std.testing.expectEqual(E.south, e);
     try std.testing.expectEqualStrings("thing", p.buffer);
@@ -85,7 +85,7 @@ test "can parse valid enum" {
 
 test "cannot parse invalid enum" {
     const E = enum { north, east, south, west };
-    var p = Parser { .buffer = "bla" };
+    var p = Parser{ .buffer = "bla" };
     try std.testing.expectError(error.NoMatch, p.parseEnum(E));
     try std.testing.expectEqualStrings("bla", p.buffer);
 }

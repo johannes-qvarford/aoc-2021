@@ -12,10 +12,10 @@ const Parser = struct {
         if (self.buffer.len == 0) return error.EndOfFile;
 
         var n: T = 0;
-        while(self.buffer.len > 0) : (self.buffer = self.buffer[1..]) {
+        while (self.buffer.len > 0) : (self.buffer = self.buffer[1..]) {
             const c = self.buffer[0];
             const digit = try switch (c) {
-                '0' ... '9' => c - '0',
+                '0'...'9' => c - '0',
                 '\n' => {
                     self.buffer = self.buffer[1..];
                     return n;
@@ -23,7 +23,7 @@ const Parser = struct {
                 else => blk: {
                     std.debug.print("Invalid character {c}", .{c});
                     break :blk error.InvalidCharacter;
-                }
+                },
             };
             const n2 = @mulWithOverflow(n, 10);
             if (n2[1] != 0) return error.NumberOverflow;
@@ -42,7 +42,7 @@ pub fn run(parser: *Parser) !u32 {
         const n = parser.parseUnsigned(u32) catch |e| {
             switch (e) {
                 error.EndOfFile => break,
-                else => return e
+                else => return e,
             }
         };
         if (n > m) {
@@ -57,7 +57,7 @@ pub fn main() !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
     const buffer = try std.io.getStdIn().readToEndAllocOptions(arena.allocator(), 1_000_000, null, @alignOf(u8), 0);
-    var parser = Parser { .buffer = buffer };
+    var parser = Parser{ .buffer = buffer };
 
     const increments = try run(&parser);
 
@@ -66,13 +66,13 @@ pub fn main() !void {
 }
 
 test "example" {
-    var parser = Parser { .buffer = example };
+    var parser = Parser{ .buffer = example };
     const actual: u32 = try run(&parser);
     try std.testing.expect(actual == 7);
 }
 
 test "input" {
-    var parser = Parser { .buffer = input };
+    var parser = Parser{ .buffer = input };
     const actual: u32 = try run(&parser);
     try std.testing.expect(actual == 1581);
 }
