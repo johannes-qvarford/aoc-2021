@@ -1,23 +1,26 @@
 const std = @import("std");
 const Parser = @import("Parser.zig");
-const m = @import("math.zig");
 
 const example = @embedFile("EXAMPLE");
 const input = @embedFile("INPUT");
 
-fn run(parser: *Parser, comptime line_length: u32) !Parser.BitStringNumber(line_length + line_length) {
-    const ShiftAmount = Parser.ShiftAmount(line_length);
-    const BitStringNumber = Parser.BitStringNumber(line_length);
+fn BitSetInteger2(comptime line_length: u16) type {
+    return std.StaticBitSet(line_length + line_length).MaskInt;
+}
 
+fn run(parser: *Parser, comptime line_length: u16) !BitSetInteger2(line_length) {
+    _ = 0;
     var gamma_amount = [_]i32{0} ** line_length;
+
+    const BitSet = std.StaticBitSet(line_length);
 
     var lines: u32 = 0;
     loop: while (true) {
-        const number = try parser.parseBitStringAsNumber(line_length);
+        const bitset: BitSet = try parser.parseBitStringAsNumber(line_length);
         lines += 1;
 
         for (0..line_length) |i| {
-            if ((number & (@as(BitStringNumber, 1) << @intCast(ShiftAmount, i))) != 0) {
+            if (bitset.isSet(i)) {
                 gamma_amount[i] += 1;
             } else {
                 gamma_amount[i] -= 1;
@@ -30,13 +33,14 @@ fn run(parser: *Parser, comptime line_length: u32) !Parser.BitStringNumber(line_
             }
         };
     }
-    var final_gamma: BitStringNumber = 0;
+    var final_gamma: BitSet = BitSet.initEmpty();
     for (gamma_amount, 0..) |amount, i| {
-        final_gamma |= (bool_to_bit(amount > 0)) * (@as(BitStringNumber, 1) << @intCast(ShiftAmount, i));
+        final_gamma.setValue(i, amount > 0);
     }
-    const final_epsilon = ~final_gamma;
+    var final_epsilon = final_gamma;
+    final_epsilon.toggleAll();
 
-    return @as(Parser.BitStringNumber(line_length + line_length), final_gamma) * final_epsilon;
+    return @as(BitSetInteger2(line_length), final_gamma.mask) * final_epsilon.mask;
 }
 
 fn bool_to_bit(b: bool) u1 {

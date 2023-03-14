@@ -12,11 +12,11 @@ pub fn parseByte(self: *Self) !u8 {
     return c;
 }
 
-pub fn parseBitCharacter(self: *Self) !u1 {
+pub fn parseBitCharacter(self: *Self) !bool {
     const byte = try self.parseByte();
     return switch (byte) {
-        '0' => 0,
-        '1' => 1,
+        '0' => false,
+        '1' => true,
         else => error.InvalidBitCharacter,
     };
 }
@@ -29,23 +29,26 @@ pub fn ShiftAmount(comptime length: comptime_int) type {
     return std.math.IntFittingRange(0, length);
 }
 
-pub fn parseBitStringAsNumber(self: *Self, comptime length: u32) !BitStringNumber(length) {
-    var n: BitStringNumber(length) = 0;
+pub fn parseBitStringAsNumber(self: *Self, comptime length: u16) !std.StaticBitSet(length) {
+    var n = std.StaticBitSet(length).initEmpty();
     for (0..length) |i| {
         const rev = (length - 1) - i;
-        n |= (try self.parseBitCharacter()) * (@as(BitStringNumber(length), 1) << @intCast(ShiftAmount(length), rev));
+        const bitC = try self.parseBitCharacter();
+        n.setValue(rev, bitC);
     }
     return n;
 }
 
 test "can parse bit string as byte" {
     var p = Self{ .buffer = "00100" };
-    const n = try p.parseBitStringAsNumber(5);
+    const set = try p.parseBitStringAsNumber(5);
+    const n = set.mask;
     try std.testing.expectEqual(@as(@TypeOf(n), 0b00100), n);
 }
 
 test "can parse bit string as byte 2" {
     var p = Self{ .buffer = "11110" };
-    const n = try p.parseBitStringAsNumber(5);
+    const set = try p.parseBitStringAsNumber(5);
+    const n = set.mask;
     try std.testing.expectEqual(@as(@TypeOf(n), 0b11110), n);
 }
